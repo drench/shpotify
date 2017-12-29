@@ -1,0 +1,55 @@
+#!/bin/sh
+
+. ./load_env
+
+out_dir=~/Code/spotify/playlists
+
+spotify_get() {
+  echo "Calling $1" > /dev/stderr
+  curl \
+    --silent \
+    -H "Authorization: Bearer ${SPOTIFY_ACCESS_TOKEN}" \
+    $1
+}
+
+playlists() {
+  spotify_get https://api.spotify.com/v1/me/playlists > "${out_dir}/playlists.json"
+  if [ "$?" != "0" ]; then
+    echo 'Playlist get failed' > /dev/stderr
+    exit 111
+  fi
+
+  cat "${out_dir}/playlists.json"
+}
+
+playlist_items() {
+  playlists |
+    jq -r '.items[] | @sh "id=\(.id) href=\(.tracks.href) name=\(.name)"'
+}
+
+playlist_items | while read -r playlist_line; do
+  eval "$playlist_line"
+  echo "Getting playlist $name ($id)" > /dev/stderr
+
+  n=0
+  next_url=$href
+
+  while [ "$next_url" != "null" ]; do
+    outfile="${out_dir}/${id}-tracks-${n}.json"
+    spotify_get $next_url > $outfile
+
+    if [ "$?" != "0" ]; then
+      echo 'API call failed' > /dev/stderr
+      exit 111
+    fi
+
+    next_url=$(jq -r '.next' < $outfile)
+    ((n++))
+  done
+
+  cat $out_dir/$id-tracks-*.json |
+    jq -c '.items[]' |
+    jq --arg name "$name" --slurp '{ name: $name, items: . }' \
+    > "${out_dir}/${id}.json" &&
+  rm ${out_dir}/${id}-tracks-*.json
+done
