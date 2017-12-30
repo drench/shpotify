@@ -55,5 +55,6 @@ playlists | jq -c '.items[]' | while read -r playlist_item; do
   echo $playlist_item |
     jq --slurpfile items ${out_dir}/${id}-tracks.json \
       '. + { items: $items }' > "${out_dir}/${id}.json"
-#  rm ${out_dir}/${id}-tracks-*.json
+
+  rm ${out_dir}/${id}-tracks-*.json ${out_dir}/${id}-tracks.json
 done
