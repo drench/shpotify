@@ -1,0 +1,19 @@
+#!/bin/sh
+
+dir=.env.d
+
+if [ ! -e $dir ]; then
+  echo "$dir/ doesn't exist!" > /dev/stderr
+  exit 111
+fi
+
+if [ -z "$(ls -A $dir)" ]; then
+  echo "$dir/ is empty!" > /dev/stderr
+  exit 111
+fi
+
+for env_file in $dir/*; do
+  key=$(basename $env_file)
+  value=$(cat $env_file)
+  export "$key=$value"
+done
