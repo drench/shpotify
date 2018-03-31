@@ -28,6 +28,21 @@ playlist_vars() {
   jq -r '@sh "id=\(.id) href=\(.tracks.href) name=\(.name)"'
 }
 
+ensure_clean_git_status() {
+  if [ -n "$(cd $out_dir && git status --porcelain)" ]; then
+    echo "${out_dir} must have a clean git status to continue."
+    (cd $out_dir && git status)
+    exit 111
+  fi
+}
+
+remove_old_json_files() {
+  rm $out_dir/*.json
+}
+
+ensure_clean_git_status
+remove_old_json_files
+
 playlists | jq -c '.items[]' | while read -r playlist_item; do
   eval "$(echo $playlist_item | playlist_vars)"
   echo "Getting playlist $name ($id)" > /dev/stderr
