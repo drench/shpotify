@@ -20,6 +20,6 @@ if [ "$token" = "null" ]; then
   echo $refresh_response
   exit 111
 else
-  echo "New token:"
-  echo $token | tee ./.env.d/SPOTIFY_ACCESS_TOKEN
+  echo $token > $SHPOTIFY_CONFIG_DIR/.env.d/SPOTIFY_ACCESS_TOKEN
+  echo "Fresh token stored in $SHPOTIFY_CONFIG_DIR/.env.d/SPOTIFY_ACCESS_TOKEN"
 fi
