@@ -1,6 +1,6 @@
 #!/bin/sh
 
-. ./load_env
+. ./shpotify-load-env
 
 refresh_token() {
   curl \

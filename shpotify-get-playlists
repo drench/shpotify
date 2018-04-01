@@ -1,6 +1,6 @@
 #!/bin/sh
 
-. ./load_env
+. ./shpotify-load-env
 
 out_dir=~/Code/spotify/playlists
 
