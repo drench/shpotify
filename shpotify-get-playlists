@@ -61,7 +61,7 @@ playlists | jq -c '.items[]' | while read -r playlist_item; do
     fi
 
     next_url=$(jq -r '.next' < $outfile)
-    ((n++))
+    n=$((n+1))
   done
 
   cat $out_dir/$id-tracks-*.json |
