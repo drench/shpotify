@@ -4,8 +4,17 @@
 
 out_dir=~/Code/spotify/playlists
 
+warn() {
+  >&2 echo $*
+}
+
+die() {
+  warn $*
+  exit 111
+}
+
 spotify_get() {
-  echo "Calling $1" > /dev/stderr
+  warn "Calling $1"
   curl \
     --silent \
     -H "Authorization: Bearer ${SPOTIFY_ACCESS_TOKEN}" \
@@ -20,8 +29,7 @@ fetch_playlists() {
     outfile="${out_dir}/playlists-part-${n}.json"
     spotify_get $next_url > $outfile
     if [ "$?" != "0" ]; then
-      echo "Playlist get $next_url failed" > /dev/stderr
-      exit 111
+      die "Playlist get $next_url failed"
     fi
 
     next_url=$(jq -r '.next' < $outfile)
@@ -35,9 +43,8 @@ playlist_vars() {
 
 ensure_clean_git_status() {
   if [ -n "$(cd $out_dir && git status --porcelain)" ]; then
-    echo "${out_dir} must have a clean git status to continue."
     (cd $out_dir && git status)
-    exit 111
+    die "${out_dir} must have a clean git status to continue."
   fi
 }
 
@@ -50,11 +57,11 @@ remove_old_json_files
 fetch_playlists
 
 for playlist_chunk in ${out_dir}/playlists-part-*.json; do
-  echo "Processing ${playlist_chunk}" > /dev/stderr
+  warn "Processing ${playlist_chunk}"
 
   jq -c '.items[]' < $playlist_chunk | while read -r playlist_item; do
     eval "$(echo $playlist_item | playlist_vars)"
-    echo "Getting playlist $name ($id)" > /dev/stderr
+    warn "Getting playlist $name ($id)"
 
     n=0
     next_url=$href
@@ -64,8 +71,7 @@ for playlist_chunk in ${out_dir}/playlists-part-*.json; do
       if [ ! -e "$outfile" ]; then
         spotify_get $next_url > $outfile
         if [ "$?" != "0" ]; then
-          echo 'API call failed' > /dev/stderr
-          exit 111
+          die 'API call failed'
         fi
       fi
 
