@@ -57,6 +57,22 @@ get_playlists() {
   spotify_api_get "v1/playlists/$1"
 }
 
+get_me_top() {
+  type=$1 # TK make sure it's artists or tracks
+  next_url="v1/me/top/${type}"
+  items=()
+
+  while ([ -n "$next_url" ] && [ "$next_url" != "null" ]); do
+    resp=$(spotify_api_get "$next_url")
+    new_items=$(echo "$resp" | jq .items)
+    items=($items $new_items)
+    next_url="$(echo "$resp" | jq -r .next)"
+    sleep 1
+  done
+
+  echo $items | jq -s add
+}
+
 get_me_playlists() {
   if [ "$1" = "--cached" ]; then
     cache=$(cat "$SHPOTIFY_CACHE_DIR/me-playlists.json" 2> /dev/null)
@@ -103,11 +119,17 @@ actions=(me playlists search)
 action=$1; shift
 case "$action" in
   me)
-    [[ -n "$2" ]] && exit 0
     case "$1" in
-      --completion) echo playlists ;;
+      --completion) printf "%s\n" playlists top ;;
       "") spotify_api_get v1/me ;;
-      playlists) get_me_playlists ;;
+      playlists) [[ -z "$2" ]] && get_me_playlists ;;
+      top)
+        case "$2" in
+          --completion) printf "%s\n" artists tracks ;;
+          "") die "Please specify either artists or tracks" ;;
+          *) [[ -z "$3" ]] && get_me_top "$2" ;;
+        esac
+        ;;
       *) die "bad argument '$1'" ;;
     esac
     ;;
