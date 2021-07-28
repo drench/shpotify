@@ -49,6 +49,21 @@ refresh_token_if_outdated() {
   export "SPOTIFY_ACCESS_TOKEN=$new_token"
 }
 
+get_me_playlists() {
+  next_url=v1/me/playlists
+  items=()
+
+  while ([ -n "$next_url" ] && [ "$next_url" != "null" ]); do
+    resp=$(spotify_api_get "$next_url")
+    new_items=$(echo "$resp" | jq .items)
+    items=($items $new_items)
+    next_url="$(echo "$resp" | jq -r .next)"
+    sleep 1
+  done
+
+  echo $items | jq -s add
+}
+
 actions=(me)
 
 action=$1; shift
@@ -57,7 +72,7 @@ case "$action" in
     case "$1" in
       --completion) echo playlists; exit 0 ;;
       "") spotify_api_get v1/me ;;
-      playlists) spotify_api_get v1/me/playlists ;;
+      playlists) get_me_playlists ;;
       *) die "bad argument '$1'" ;;
     esac
     ;;
