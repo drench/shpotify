@@ -83,7 +83,7 @@ get_me_playlists() {
   echo $all_items
 }
 
-actions=(me playlists)
+actions=(me playlists search)
 
 action=$1; shift
 case "$action" in
@@ -102,6 +102,26 @@ case "$action" in
       --completion) get_me_playlists --cached | jq -r '.[] | .id' ;;
       "") die "Please specify a playlist ID" ;;
       *) get_playlists "$1" ;;
+    esac
+    ;;
+
+  search)
+    item_types=(album artist playlist track show episode)
+
+    case "$1" in
+      --completion) printf "%s\n" $item_types ;;
+      "") die "Please specify an item type ($item_types)" ;;
+      *)
+        type=$1 # TK make sure it's in $item_types!
+        case "$2" in
+          --completion) exit 0 ;;
+          "") die "Please specify a search query" ;;
+          *)
+            q=$(echo "$2" | jq --raw-input -r '@uri')
+            spotify_api_get "v1/search?q=${q}&type=${type}"
+            ;;
+        esac
+        ;;
     esac
     ;;
   --completion) printf "%s\n" $actions ;;
