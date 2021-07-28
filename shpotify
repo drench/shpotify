@@ -20,8 +20,10 @@ done
 
 spotify_api_get() {
   refresh_token_if_outdated
-  curl --silent -H "Authorization: Bearer ${SPOTIFY_ACCESS_TOKEN}" \
-    "https://api.spotify.com/v1/$1" | jq .
+  url=$1
+  [[ "$url" = https://api.spotify.com/* ]] || url="https://api.spotify.com/$1"
+
+  curl --silent -H "Authorization: Bearer ${SPOTIFY_ACCESS_TOKEN}" "$url" | jq .
 }
 
 fetch_refresh_token() {
@@ -49,9 +51,16 @@ refresh_token_if_outdated() {
 
 actions=(me)
 
-action=$1
+action=$1; shift
 case "$action" in
-  me) spotify_api_get me ;;
+  me)
+    case "$1" in
+      --completion) echo playlists; exit 0 ;;
+      "") spotify_api_get v1/me ;;
+      playlists) spotify_api_get v1/me/playlists ;;
+      *) die "bad argument '$1'" ;;
+    esac
+    ;;
   --completion) printf "%s\n" $actions ;;
   --completion-code)
     cmd=$(basename "$full_cmd")
