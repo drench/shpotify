@@ -18,7 +18,13 @@ for env_file in $env_dir/*; do
   export "$key=$value"
 done
 
-refresh_token() {
+spotify_api_get() {
+  refresh_token_if_outdated
+  curl --silent -H "Authorization: Bearer ${SPOTIFY_ACCESS_TOKEN}" \
+    "https://api.spotify.com/v1/$1" | jq .
+}
+
+fetch_refresh_token() {
   curl \
     --silent \
     -d "client_id=${SPOTIFY_CLIENT_ID}" \
@@ -34,18 +40,19 @@ refresh_token_if_outdated() {
   delta=$(($now - $token_mtime))
   [[ "$delta" -lt 3000 ]] && return
   warn "Refreshing the spotify access token"
-  new_token=$(refresh_token)
-  [[ "$token" = "null" ]] && die "No token returned"
-  echo "$token" > "$env_dir/SPOTIFY_ACCESS_TOKEN"
+  new_token=$(fetch_refresh_token)
+  [[ "$new_token" = "null" ]] && die "No token returned"
+  [[ -z "$new_token" ]] && die "Token is empty ???"
+  echo "$new_token" > "$env_dir/SPOTIFY_ACCESS_TOKEN"
+  export "SPOTIFY_ACCESS_TOKEN=$new_token"
 }
 
-refresh_token_if_outdated # do this at API call sites
+actions=(me)
 
 action=$1
 case "$action" in
-  --completion)
-    warn "this is a warning!"
-    ;;
+  me) spotify_api_get me ;;
+  --completion) printf "%s\n" $actions ;;
   --completion-code)
     cmd=$(basename "$full_cmd")
     echo "compctl -K _${cmd} ${cmd}"
@@ -54,6 +61,5 @@ case "$action" in
     echo '  reply=($($words --completion))'
     echo '}'
     ;;
-  *)
-    echo "usage would go here" ;;
+  *) die "Usage: $full_cmd [ $actions ]" ;;
 esac
