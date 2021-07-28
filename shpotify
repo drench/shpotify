@@ -135,10 +135,11 @@ action=$1; shift
 case "$action" in
   me)
     case "$1" in
-      --completion) printf "%s\n" albums playlists top ;;
+      --completion) printf "%s\n" albums player playlists top ;;
       "") spotify_api_get v1/me ;;
       albums) [[ -z "$2" ]] && get_me_albums ;;
       playlists) [[ -z "$2" ]] && get_me_playlists ;;
+      player) [[ -z "$2" ]] && spotify_api_get v1/me/player ;;
       top)
         case "$2" in
           --completion) printf "%s\n" artists tracks ;;
