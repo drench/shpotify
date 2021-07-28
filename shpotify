@@ -83,6 +83,21 @@ get_me_playlists() {
   echo $all_items
 }
 
+get_search() {
+  next_url="$1"
+  items=()
+
+  while ([ -n "$next_url" ] && [ "$next_url" != "null" ]); do
+    resp=$(spotify_api_get "$next_url")
+    new_items=$(echo "$resp" | jq 'to_entries[] | .value.items')
+    items=($items $new_items)
+    next_url="$(echo "$resp" | jq -r .next)"
+    sleep 1
+  done
+
+  echo $items | jq -s add
+}
+
 actions=(me playlists search)
 
 action=$1; shift
@@ -112,13 +127,14 @@ case "$action" in
       --completion) printf "%s\n" $item_types ;;
       "") die "Please specify an item type ($item_types)" ;;
       *)
+        [[ -z "$3" ]] || exit 0
         type=$1 # TK make sure it's in $item_types!
         case "$2" in
           --completion) exit 0 ;;
           "") die "Please specify a search query" ;;
           *)
             q=$(echo "$2" | jq --raw-input -r '@uri')
-            spotify_api_get "v1/search?q=${q}&type=${type}"
+            get_search "v1/search?q=${q}&type=${type}"
             ;;
         esac
         ;;
