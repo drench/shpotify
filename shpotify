@@ -88,6 +88,7 @@ actions=(me playlists)
 action=$1; shift
 case "$action" in
   me)
+    [[ -n "$2" ]] && exit 0
     case "$1" in
       --completion) echo playlists ;;
       "") spotify_api_get v1/me ;;
