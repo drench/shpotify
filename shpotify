@@ -8,7 +8,7 @@ cmd=$(basename "$full_cmd")
 warn() { >&2 echo $* }
 die() { warn $*; exit 111 }
 
-SHPOTIFY_CONFIG_DIR=${SHPOTIFY_CONFIG_DIR:-~/.config/shpotify}
+export SHPOTIFY_CONFIG_DIR=${SHPOTIFY_CONFIG_DIR:-~/.config/shpotify}
 env_dir="$SHPOTIFY_CONFIG_DIR/.env.d"
 [[ -e "$env_dir" ]] || die "${env_dir} does not exist!"
 [[ -z "$(ls -A "$env_dir")" ]] && die "${env_dir} is empty!"
@@ -17,6 +17,9 @@ for env_file in $env_dir/*; do
   value=$(cat "$env_file")
   export "$key=$value"
 done
+
+export SHPOTIFY_CACHE_DIR=${SHPOTIFY_CACHE_DIR:-~/.cache/shpotify}
+[[ -d "$SHPOTIFY_CACHE_DIR" ]] || mkdir -p "$SHPOTIFY_CACHE_DIR"
 
 spotify_api_get() {
   refresh_token_if_outdated
@@ -49,7 +52,20 @@ refresh_token_if_outdated() {
   export "SPOTIFY_ACCESS_TOKEN=$new_token"
 }
 
+get_playlists() {
+  [[ "$1" =~ "^[[:alnum:]]+$" ]] || die "Invalid playlist ID '$1'"
+  spotify_api_get "v1/playlists/$1"
+}
+
 get_me_playlists() {
+  if [ "$1" = "--cached" ]; then
+    cache=$(cat "$SHPOTIFY_CACHE_DIR/me-playlists.json" 2> /dev/null)
+    if [ -n "$cache" ]; then
+      echo $cache
+      return
+    fi
+  fi
+
   next_url=v1/me/playlists
   items=()
 
@@ -61,19 +77,30 @@ get_me_playlists() {
     sleep 1
   done
 
-  echo $items | jq -s add
+  all_items=$(echo $items | jq -s add)
+  echo $all_items > "$SHPOTIFY_CACHE_DIR/me-playlists.json"
+
+  echo $all_items
 }
 
-actions=(me)
+actions=(me playlists)
 
 action=$1; shift
 case "$action" in
   me)
     case "$1" in
-      --completion) echo playlists; exit 0 ;;
+      --completion) echo playlists ;;
       "") spotify_api_get v1/me ;;
       playlists) get_me_playlists ;;
       *) die "bad argument '$1'" ;;
+    esac
+    ;;
+
+  playlists)
+    case "$1" in
+      --completion) get_me_playlists --cached | jq -r '.[] | .id' ;;
+      "") die "Please specify a playlist ID" ;;
+      *) get_playlists "$1" ;;
     esac
     ;;
   --completion) printf "%s\n" $actions ;;
