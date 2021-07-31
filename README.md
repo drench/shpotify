@@ -6,10 +6,10 @@ It also requires `jq` and `curl` which you may need to install yourself.
 To get started, get set up with the Spotify API.
 For details: https://developer.spotify.com/web-api/tutorial/
 
-Store your Spotify Client ID in the file `~/config/shpotify/.env.d/SPOTIFY_CLIENT_ID`.
-Store your Spotify Client Secret in the file `~/config/shpotify/.env.d/SPOTIFY_CLIENT_SECRET`.
-Store your Spotify Refresh Token in `~/config/shpotify/.env.d/SPOTIFY_REFRESH_TOKEN`.
-Store your Spotify Access Token in `~/config/shpotify/.env.d/SPOTIFY_ACCESS_TOKEN`.
+* Store your Spotify Client ID in the file `~/config/shpotify/.env.d/SPOTIFY_CLIENT_ID`.
+* Store your Spotify Client Secret in the file `~/config/shpotify/.env.d/SPOTIFY_CLIENT_SECRET`.
+* Store your Spotify Refresh Token in `~/config/shpotify/.env.d/SPOTIFY_REFRESH_TOKEN`.
+* Store your Spotify Access Token in `~/config/shpotify/.env.d/SPOTIFY_ACCESS_TOKEN`.
 
 Your access token will expire in about an hour but `shpotify` will automatically
 refresh it if it's nearing or past expiration.
