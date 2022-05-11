@@ -129,10 +129,11 @@ get_search() {
   echo $items | jq -s add
 }
 
-actions=(me playlists search)
+actions=(markets me playlists search)
 
 action=$1; shift
 case "$action" in
+  markets) [[ -z "$1" ]] && spotify_api_get v1/markets ;;
   me)
     case "$1" in
       --completion) printf "%s\n" albums following player playlists top ;;
