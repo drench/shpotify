@@ -97,18 +97,7 @@ get_me_playlists() {
     fi
   fi
 
-  next_url=v1/me/playlists
-  items=()
-
-  while ([ -n "$next_url" ] && [ "$next_url" != "null" ]); do
-    resp=$(spotify_api_get "$next_url")
-    new_items=$(echo "$resp" | jq .items)
-    items=($items $new_items)
-    next_url="$(echo "$resp" | jq -r .next)"
-    sleep 1
-  done
-
-  all_items=$(echo $items | jq -s add)
+  all_items=$(get_paginated v1/me/playlists)
   echo $all_items > "$SHPOTIFY_CACHE_DIR/me-playlists.json"
 
   echo $all_items
