@@ -137,7 +137,15 @@ case "$action" in
     case "$1" in
       --completion) printf "%s\n" categories ;;
       "") die "" ;;
-      categories) get_paginated v1/browse/categories .categories ;;
+      categories)
+        case "$2" in
+          --completion) # TK cache this?
+            get_paginated v1/browse/categories .categories | jq -r '.[] | .id'
+            ;;
+          "") get_paginated v1/browse/categories .categories ;;
+          *) spotify_api_get "v1/browse/categories/$2" ;;
+        esac
+        ;;
     esac
     ;;
 
