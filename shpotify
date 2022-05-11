@@ -129,7 +129,7 @@ get_search() {
   echo $items | jq -s add
 }
 
-actions=(markets me playlists search)
+actions=(markets me playlists recommendations search)
 
 action=$1; shift
 case "$action" in
@@ -172,6 +172,16 @@ case "$action" in
       --completion) get_me_playlists --cached | jq -r '.[] | .id' ;;
       "") die "Please specify a playlist ID" ;;
       *) get_playlists "$1" ;;
+    esac
+    ;;
+
+  recommendations)
+    case "$1" in
+      --completion) printf "%s\n" available-genre-seeds ;;
+      "") die "" ;;
+      available-genre-seeds)
+        spotify_api_get v1/recommendations/available-genre-seeds
+        ;;
     esac
     ;;
 
