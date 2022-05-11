@@ -74,6 +74,20 @@ get_paginated() {
   echo $items | jq -s add
 }
 
+get_browse_categories() {
+  if [ "$1" = "--cached" ]; then
+    cache=$(cat "$SHPOTIFY_CACHE_DIR/browse-categories.json" 2> /dev/null)
+    if [ -n "$cache" ]; then
+      echo $cache | jq -r '.[] | .id'
+      return
+    fi
+  fi
+
+  categories=$(get_paginated v1/browse/categories .categories)
+  echo "$categories" > "$SHPOTIFY_CACHE_DIR/browse-categories.json"
+  echo "$categories" | jq -r '.[] | .id'
+}
+
 get_me_playlists() {
   if [ "$1" = "--cached" ]; then
     cache=$(cat "$SHPOTIFY_CACHE_DIR/me-playlists.json" 2> /dev/null)
@@ -125,9 +139,7 @@ case "$action" in
       "") die "" ;;
       categories)
         case "$2" in
-          --completion) # TK cache this?
-            get_paginated v1/browse/categories .categories | jq -r '.[] | .id'
-            ;;
+          --completion) get_browse_categories --cached ;;
           "") get_paginated v1/browse/categories .categories ;;
           *) spotify_api_get "v1/browse/categories/$2" ;;
         esac
