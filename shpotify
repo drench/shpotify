@@ -74,20 +74,6 @@ get_paginated() {
   echo $items | jq -s add
 }
 
-get_me_albums() {
-  get_paginated v1/me/albums
-}
-
-get_me_following() {
-  type=$1 # TK make sure it's artists (the only supported value)
-  get_paginated "v1/me/following?type=${type}" ".artists"
-}
-
-get_me_top() {
-  type=$1 # TK make sure it's artists or tracks
-  get_paginated "v1/me/top/${type}"
-}
-
 get_me_playlists() {
   if [ "$1" = "--cached" ]; then
     cache=$(cat "$SHPOTIFY_CACHE_DIR/me-playlists.json" 2> /dev/null)
@@ -155,12 +141,14 @@ case "$action" in
     case "$1" in
       --completion) printf "%s\n" albums following player playlists top ;;
       "") spotify_api_get v1/me ;;
-      albums) [[ -z "$2" ]] && get_me_albums ;;
+      albums) [[ -z "$2" ]] && get_paginated v1/me/albums ;;
       following)
         case "$2" in
           --completion) printf "%s\n" artist ;;
           "") die "" ;;
-          *) [[ -z "$3" ]] && get_me_following "$2" ;;
+          *)
+            [[ -z "$3" ]] && get_paginated "v1/me/following?type=$2" .artists
+            ;;
         esac
         ;;
       playlists) [[ -z "$2" ]] && get_me_playlists ;;
@@ -177,7 +165,7 @@ case "$action" in
         case "$2" in
           --completion) printf "%s\n" artists tracks ;;
           "") die "Please specify either artists or tracks" ;;
-          *) [[ -z "$3" ]] && get_me_top "$2" ;;
+          *) [[ -z "$3" ]] && get_paginated "v1/me/top/$2" ;;
         esac
         ;;
       *) die "bad argument '$1'" ;;
