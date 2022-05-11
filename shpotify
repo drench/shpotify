@@ -21,6 +21,18 @@ done
 export SHPOTIFY_CACHE_DIR=${SHPOTIFY_CACHE_DIR:-~/.cache/shpotify}
 [[ -d "$SHPOTIFY_CACHE_DIR" ]] || mkdir -p "$SHPOTIFY_CACHE_DIR"
 
+spotify_api_call() {
+  refresh_token_if_outdated
+  method=$1
+  url=$2
+  [[ "$url" = https://api.spotify.com/* ]] || url="https://api.spotify.com/$2"
+
+  curl --silent \
+    --request "$method" \
+    -H "Authorization: Bearer ${SPOTIFY_ACCESS_TOKEN}" "$url" | jq .
+}
+
+
 spotify_api_get() {
   refresh_token_if_outdated
   url=$1
@@ -155,10 +167,14 @@ case "$action" in
       playlists) [[ -z "$2" ]] && get_me_playlists ;;
       player)
         case "$2" in
-          --completion) printf "%s\n" currently-playing devices recently-played ;;
+          --completion)
+            printf "%s\n" currently-playing devices pause play recently-played
+            ;;
           "") spotify_api_get v1/me/player ;;
           currently-playing) spotify_api_get v1/me/player/currently-playing ;;
           devices) spotify_api_get v1/me/player/devices ;;
+          pause) spotify_api_call PUT v1/me/player/pause ;;
+          play) spotify_api_call PUT v1/me/player/play ;;
           recently-played) get_paginated v1/me/player/recently-played ;;
         esac
         ;;
