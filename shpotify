@@ -57,51 +57,35 @@ get_playlists() {
   spotify_api_get "v1/playlists/$1"
 }
 
-get_me_albums() { # TK extract common item pagination
-  next_url=v1/me/albums
+get_paginated() {
+  next_url=$1
+  selector_prefix=$2
+
   items=()
 
   while ([ -n "$next_url" ] && [ "$next_url" != "null" ]); do
     resp=$(spotify_api_get "$next_url")
-    new_items=$(echo "$resp" | jq .items)
+    new_items=$(echo "$resp" | jq "${selector_prefix}.items")
     items=($items $new_items)
-    next_url="$(echo "$resp" | jq -r .next)"
+    next_url="$(echo "$resp" | jq -r "${selector_prefix}.next")"
     sleep 1
   done
 
   echo $items | jq -s add
+}
+
+get_me_albums() {
+  get_paginated v1/me/albums
 }
 
 get_me_following() {
   type=$1 # TK make sure it's artists (the only supported value)
-  next_url="v1/me/following?type=${type}"
-  items=()
-
-  while ([ -n "$next_url" ] && [ "$next_url" != "null" ]); do
-    resp=$(spotify_api_get "$next_url")
-    new_items=$(echo "$resp" | jq .artists.items)
-    items=($items $new_items)
-    next_url="$(echo "$resp" | jq -r .artists.next)"
-    warn "next_url is ${next_url}"
-  done
-
-  echo $items | jq -s add
+  get_paginated "v1/me/following?type=${type}" ".artists"
 }
 
 get_me_top() {
   type=$1 # TK make sure it's artists or tracks
-  next_url="v1/me/top/${type}"
-  items=()
-
-  while ([ -n "$next_url" ] && [ "$next_url" != "null" ]); do
-    resp=$(spotify_api_get "$next_url")
-    new_items=$(echo "$resp" | jq .items)
-    items=($items $new_items)
-    next_url="$(echo "$resp" | jq -r .next)"
-    sleep 1
-  done
-
-  echo $items | jq -s add
+  get_paginated "v1/me/top/${type}"
 }
 
 get_me_playlists() {
