@@ -146,7 +146,13 @@ case "$action" in
         esac
         ;;
       playlists) [[ -z "$2" ]] && get_me_playlists ;;
-      player) [[ -z "$2" ]] && spotify_api_get v1/me/player ;;
+      player)
+        case "$2" in
+          --completion) printf "%s\n" devices ;;
+          "") spotify_api_get v1/me/player ;;
+          devices) spotify_api_get v1/me/player/devices ;;
+        esac
+        ;;
       top)
         case "$2" in
           --completion) printf "%s\n" artists tracks ;;
