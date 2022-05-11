@@ -72,6 +72,22 @@ get_me_albums() { # TK extract common item pagination
   echo $items | jq -s add
 }
 
+get_me_following() {
+  type=$1 # TK make sure it's artists (the only supported value)
+  next_url="v1/me/following?type=${type}"
+  items=()
+
+  while ([ -n "$next_url" ] && [ "$next_url" != "null" ]); do
+    resp=$(spotify_api_get "$next_url")
+    new_items=$(echo "$resp" | jq .artists.items)
+    items=($items $new_items)
+    next_url="$(echo "$resp" | jq -r .artists.next)"
+    warn "next_url is ${next_url}"
+  done
+
+  echo $items | jq -s add
+}
+
 get_me_top() {
   type=$1 # TK make sure it's artists or tracks
   next_url="v1/me/top/${type}"
@@ -135,9 +151,16 @@ action=$1; shift
 case "$action" in
   me)
     case "$1" in
-      --completion) printf "%s\n" albums player playlists top ;;
+      --completion) printf "%s\n" albums following player playlists top ;;
       "") spotify_api_get v1/me ;;
       albums) [[ -z "$2" ]] && get_me_albums ;;
+      following)
+        case "$2" in
+          --completion) printf "%s\n" artist ;;
+          "") die "" ;;
+          *) [[ -z "$3" ]] && get_me_following "$2" ;;
+        esac
+        ;;
       playlists) [[ -z "$2" ]] && get_me_playlists ;;
       player) [[ -z "$2" ]] && spotify_api_get v1/me/player ;;
       top)
