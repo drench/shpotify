@@ -148,8 +148,9 @@ case "$action" in
       playlists) [[ -z "$2" ]] && get_me_playlists ;;
       player)
         case "$2" in
-          --completion) printf "%s\n" devices ;;
+          --completion) printf "%s\n" currently-playing devices ;;
           "") spotify_api_get v1/me/player ;;
+          currently-playing) spotify_api_get v1/me/player/currently-playing ;;
           devices) spotify_api_get v1/me/player/devices ;;
         esac
         ;;
