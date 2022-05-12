@@ -160,17 +160,31 @@ case "$action" in
         case "$2" in
           --completion)
             printf "%s\n" \
-              currently-playing devices next pause play previous recently-played
+              currently-playing devices next pause play previous queue recently-played
             ;;
+
           "") spotify_api_call GET v1/me/player ;;
+
           currently-playing)
             spotify_api_call GET v1/me/player/currently-playing
             ;;
+
           devices) spotify_api_call GET v1/me/player/devices ;;
           next) spotify_api_call POST v1/me/player/next ;;
           pause) spotify_api_call PUT v1/me/player/pause ;;
           play) spotify_api_call PUT v1/me/player/play ;;
           previous) spotify_api_call POST v1/me/player/previous ;;
+
+          queue)
+            case "$3" in
+              --completion) echo "spotify:track:" ;;
+              "") die "" ;;
+              spotify:track:*)
+                spotify_api_call POST "v1/me/player/queue?uri=$3"
+                ;;
+            esac
+            ;;
+
           recently-played) get_paginated v1/me/player/recently-played ;;
         esac
         ;;
