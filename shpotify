@@ -121,10 +121,13 @@ get_search() {
   echo $items | jq -s add
 }
 
-actions=(browse markets me playlists recommendations search)
+actions=(albums artists browse markets me playlists recommendations search)
 
 action=$1; shift
 case "$action" in
+  albums) spotify_api_call GET "v1/albums/$1" ;; # TK check if $1 is legal
+  artists) spotify_api_call GET "v1/artists/$1" ;; # TK check if $1 is legal
+
   browse)
     case "$1" in
       --completion) printf "%s\n" categories ;;
