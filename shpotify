@@ -121,153 +121,13 @@ get_search() {
   echo $items | jq -s add
 }
 
-actions=(albums artists browse markets me playlists recommendations search)
+verbs=(delete get post put)
 
-action=$1; shift
-case "$action" in
-  albums)
-    case "$2" in
-      --completion) printf "%s\n" tracks ;;
-      "") spotify_api_call GET "v1/albums/$1" ;; # TK check if $1 is legal
-      tracks) get_paginated "v1/albums/$1/tracks" ;;
-    esac
-    ;;
+verb=$1
+noun=$2
 
-  artists)
-    case "$2" in
-      --completion) printf "%s\n" albums related-artists top-tracks ;;
-      "") spotify_api_call GET "v1/artists/$1" ;; # TK check if $1 is legal
-      albums) get_paginated "v1/artists/$1/albums" ;;
-      related-artists) spotify_api_call GET "v1/artists/$1/related-artists" ;;
-      top-tracks) spotify_api_call GET "v1/artists/$1/top-tracks?market=US" ;;
-    esac
-    ;;
-
-  browse)
-    case "$1" in
-      --completion) printf "%s\n" categories ;;
-      "") die "" ;;
-      categories)
-        case "$2" in
-          --completion) get_browse_categories --cached ;;
-          "") get_paginated v1/browse/categories .categories ;;
-          *) spotify_api_call GET "v1/browse/categories/$2" ;;
-        esac
-        ;;
-    esac
-    ;;
-
-  markets) [[ -z "$1" ]] && spotify_api_call GET v1/markets ;;
-
-  me)
-    case "$1" in
-      --completion) printf "%s\n" albums following player playlists top ;;
-      "") spotify_api_call GET v1/me ;;
-      albums) [[ -z "$2" ]] && get_paginated v1/me/albums ;;
-      following)
-        case "$2" in
-          --completion) printf "%s\n" artist ;;
-          "") die "" ;;
-          *)
-            [[ -z "$3" ]] && get_paginated "v1/me/following?type=$2" .artists
-            ;;
-        esac
-        ;;
-      playlists) [[ -z "$2" ]] && get_me_playlists ;;
-      player)
-        case "$2" in
-          --completion)
-            printf "%s\n" \
-              currently-playing devices next pause play previous queue \
-              recently-played volume
-            ;;
-
-          "") spotify_api_call GET v1/me/player ;;
-
-          currently-playing)
-            spotify_api_call GET v1/me/player/currently-playing
-            ;;
-
-          devices) spotify_api_call GET v1/me/player/devices ;;
-          next) spotify_api_call POST v1/me/player/next ;;
-          pause) spotify_api_call PUT v1/me/player/pause ;;
-          play) spotify_api_call PUT v1/me/player/play ;;
-          previous) spotify_api_call POST v1/me/player/previous ;;
-
-          queue)
-            case "$3" in
-              --completion) echo "spotify:track:" ;;
-              "") die "" ;;
-              spotify:track:*)
-                spotify_api_call POST "v1/me/player/queue?uri=$3"
-                ;;
-            esac
-            ;;
-
-          recently-played) get_paginated v1/me/player/recently-played ;;
-
-          volume)
-            case "$3" in
-              --completion) printf "%s\n" 0 25 50 75 100 ;;
-              "") die "" ;;
-              *)
-                vol=$3
-                spotify_api_call PUT "v1/me/player/volume?volume_percent=$3"
-                ;;
-            esac
-            ;;
-        esac
-        ;;
-      top)
-        case "$2" in
-          --completion) printf "%s\n" artists tracks ;;
-          "") die "Please specify either artists or tracks" ;;
-          *) [[ -z "$3" ]] && get_paginated "v1/me/top/$2" ;;
-        esac
-        ;;
-      *) die "bad argument '$1'" ;;
-    esac
-    ;;
-
-  playlists)
-    case "$1" in
-      --completion) get_me_playlists --cached | jq -r '.[] | .id' ;;
-      "") die "Please specify a playlist ID" ;;
-      *) get_playlists "$1" ;;
-    esac
-    ;;
-
-  recommendations)
-    case "$1" in
-      --completion) printf "%s\n" available-genre-seeds ;;
-      "") die "" ;;
-      available-genre-seeds)
-        spotify_api_call GET v1/recommendations/available-genre-seeds
-        ;;
-    esac
-    ;;
-
-  search)
-    item_types=(album artist playlist track show episode)
-
-    case "$1" in
-      --completion) printf "%s\n" $item_types ;;
-      "") die "Please specify an item type ($item_types)" ;;
-      *)
-        [[ -z "$3" ]] || exit 0
-        type=$1 # TK make sure it's in $item_types!
-        case "$2" in
-          --completion) exit 0 ;;
-          "") die "Please specify a search query" ;;
-          *)
-            q=$(echo "$2" | jq --raw-input -r '@uri')
-            get_search "v1/search?q=${q}&type=${type}"
-            ;;
-        esac
-        ;;
-    esac
-    ;;
-  --completion) printf "%s\n" $actions ;;
+case "$verb" in
+  --completion) printf "%s\n" $verbs ;;
   --completion-code)
     cmd=$(basename "$full_cmd")
     echo "compctl -K _${cmd} ${cmd}"
@@ -276,5 +136,283 @@ case "$action" in
     echo '  reply=($($words --completion))'
     echo '}'
     ;;
-  *) die "Usage: $full_cmd [ $actions ]" ;;
+  delete) die $verb ;;
+  get)
+    case "$noun" in
+      --completion)
+        printf "%s\n" \
+          albums artists browse markets me playlists recommendations search
+        ;;
+
+      albums)
+        album=$3
+        case "$4" in
+          --completion) printf "%s\n" tracks ;;
+          "") spotify_api_call GET "v1/albums/$album" ;;
+          tracks) get_paginated "v1/albums/$album/tracks" ;;
+        esac
+        ;;
+
+      artists)
+        artist=$3
+        case "$4" in
+          --completion) printf "%s\n" albums related-artists top-tracks ;;
+          "") spotify_api_call GET "v1/artists/$artist" ;;
+          albums) get_paginated "v1/artists/$artist/albums" ;;
+          related-artists)
+            spotify_api_call GET "v1/artists/$artist/related-artists"
+            ;;
+          top-tracks)
+            spotify_api_call GET "v1/artists/$artist/top-tracks?market=US"
+            ;;
+        esac
+        ;;
+
+      browse)
+        case "$3" in
+          --completion) printf "%s\n" categories ;;
+          "") die "" ;;
+          categories)
+            case "$4" in
+              --completion) get_browse_categories --cached ;;
+              "") get_paginated v1/browse/categories .categories ;;
+              *) spotify_api_call GET "v1/browse/categories/$4" ;;
+            esac
+            ;;
+        esac
+        ;;
+
+      markets) test -z "$3" && spotify_api_call GET v1/markets ;;
+
+      me)
+        case "$3" in
+          --completion) printf "%s\n" albums following player playlists top ;;
+          "") spotify_api_call GET v1/me ;;
+          albums) test -z "$4" && get_paginated v1/me/albums ;;
+          following)
+            case "$4" in
+              --completion) printf "%s\n" artist ;;
+              "") die "" ;;
+              *)
+                test -z "$5" && get_paginated "v1/me/following?type=$4" .artists
+                ;;
+            esac
+            ;;
+          playlists) test -z "$4" && get_me_playlists ;;
+          player)
+            case "$4" in
+              --completion) printf "%s\n" currently-playing devices recently-played ;;
+              "") spotify_api_call GET v1/me/player ;;
+              currently-playing) spotify_api_call GET v1/me/player/currently-playing ;;
+              devices) spotify_api_call GET v1/me/player/devices ;;
+              recently-played) get_paginated v1/me/player/recently-played ;;
+            esac
+            ;;
+          top)
+            case "$4" in
+              --completion) printf "%s\n" artists tracks ;;
+              "") die "" ;;
+              *) test -z "$5" && get_paginated "v1/me/top/$4" ;;
+            esac
+            ;;
+        esac
+        ;;
+
+      playlists)
+        case "$3" in
+          --completion) get_me_playlists --cached | jq -r '.[] | .id' ;;
+          "") die "" ;;
+          *) get_playlists "$3" ;;
+        esac
+        ;;
+
+      recommendations)
+        case "$3" in
+          --completion) printf "%s\n" available-genre-seeds ;;
+          "") die "" ;;
+          available-genre-seeds)
+            spotify_api_call GET v1/recommendations/available-genre-seeds
+            ;;
+        esac
+        ;;
+
+      search) die "TK" ;;
+
+      "") die "" ;;
+    esac
+    ;;
+
+  post) die $verb ;;
+
+  put)
+    case "$noun" in
+      --completion) printf "%s\n" me ;;
+      "") die "" ;;
+      me)
+        case "$3" in
+          player) die "TK" ;;
+        esac
+        ;;
+    esac
+    ;;
+
+  *) die $verb ;;
 esac
+
+# actions=(albums artists browse markets me playlists recommendations search)
+
+# action=$1; shift
+# case "$action" in
+#   albums)
+#     case "$2" in
+#       --completion) printf "%s\n" tracks ;;
+#       "") spotify_api_call GET "v1/albums/$1" ;; # TK check if $1 is legal
+#       tracks) get_paginated "v1/albums/$1/tracks" ;;
+#     esac
+#     ;;
+
+#   artists)
+#     case "$2" in
+#       --completion) printf "%s\n" albums related-artists top-tracks ;;
+#       "") spotify_api_call GET "v1/artists/$1" ;; # TK check if $1 is legal
+#       albums) get_paginated "v1/artists/$1/albums" ;;
+#       related-artists) spotify_api_call GET "v1/artists/$1/related-artists" ;;
+#       top-tracks) spotify_api_call GET "v1/artists/$1/top-tracks?market=US" ;;
+#     esac
+#     ;;
+
+#   browse)
+#     case "$1" in
+#       --completion) printf "%s\n" categories ;;
+#       "") die "" ;;
+#       categories)
+#         case "$2" in
+#           --completion) get_browse_categories --cached ;;
+#           "") get_paginated v1/browse/categories .categories ;;
+#           *) spotify_api_call GET "v1/browse/categories/$2" ;;
+#         esac
+#         ;;
+#     esac
+#     ;;
+
+#   markets) [[ -z "$1" ]] && spotify_api_call GET v1/markets ;;
+
+#   me)
+#     case "$1" in
+#       --completion) printf "%s\n" albums following player playlists top ;;
+#       "") spotify_api_call GET v1/me ;;
+#       albums) [[ -z "$2" ]] && get_paginated v1/me/albums ;;
+#       following)
+#         case "$2" in
+#           --completion) printf "%s\n" artist ;;
+#           "") die "" ;;
+#           *)
+#             [[ -z "$3" ]] && get_paginated "v1/me/following?type=$2" .artists
+#             ;;
+#         esac
+#         ;;
+#       playlists) [[ -z "$2" ]] && get_me_playlists ;;
+#       player)
+#         case "$2" in
+#           --completion)
+#             printf "%s\n" \
+#               currently-playing devices next pause play previous queue \
+#               recently-played volume
+#             ;;
+
+#           "") spotify_api_call GET v1/me/player ;;
+
+#           currently-playing)
+#             spotify_api_call GET v1/me/player/currently-playing
+#             ;;
+
+#           devices) spotify_api_call GET v1/me/player/devices ;;
+#           next) spotify_api_call POST v1/me/player/next ;;
+#           pause) spotify_api_call PUT v1/me/player/pause ;;
+#           play) spotify_api_call PUT v1/me/player/play ;;
+#           previous) spotify_api_call POST v1/me/player/previous ;;
+
+#           queue)
+#             case "$3" in
+#               --completion) echo "spotify:track:" ;;
+#               "") die "" ;;
+#               spotify:track:*)
+#                 spotify_api_call POST "v1/me/player/queue?uri=$3"
+#                 ;;
+#             esac
+#             ;;
+
+#           recently-played) get_paginated v1/me/player/recently-played ;;
+
+#           volume)
+#             case "$3" in
+#               --completion) printf "%s\n" 0 25 50 75 100 ;;
+#               "") die "" ;;
+#               *)
+#                 vol=$3
+#                 spotify_api_call PUT "v1/me/player/volume?volume_percent=$3"
+#                 ;;
+#             esac
+#             ;;
+#         esac
+#         ;;
+#       top)
+#         case "$2" in
+#           --completion) printf "%s\n" artists tracks ;;
+#           "") die "Please specify either artists or tracks" ;;
+#           *) [[ -z "$3" ]] && get_paginated "v1/me/top/$2" ;;
+#         esac
+#         ;;
+#       *) die "bad argument '$1'" ;;
+#     esac
+#     ;;
+
+#   playlists)
+#     case "$1" in
+#       --completion) get_me_playlists --cached | jq -r '.[] | .id' ;;
+#       "") die "Please specify a playlist ID" ;;
+#       *) get_playlists "$1" ;;
+#     esac
+#     ;;
+
+#   recommendations)
+#     case "$1" in
+#       --completion) printf "%s\n" available-genre-seeds ;;
+#       "") die "" ;;
+#       available-genre-seeds)
+#         spotify_api_call GET v1/recommendations/available-genre-seeds
+#         ;;
+#     esac
+#     ;;
+
+#   search)
+#     item_types=(album artist playlist track show episode)
+
+#     case "$1" in
+#       --completion) printf "%s\n" $item_types ;;
+#       "") die "Please specify an item type ($item_types)" ;;
+#       *)
+#         [[ -z "$3" ]] || exit 0
+#         type=$1 # TK make sure it's in $item_types!
+#         case "$2" in
+#           --completion) exit 0 ;;
+#           "") die "Please specify a search query" ;;
+#           *)
+#             q=$(echo "$2" | jq --raw-input -r '@uri')
+#             get_search "v1/search?q=${q}&type=${type}"
+#             ;;
+#         esac
+#         ;;
+#     esac
+#     ;;
+#   --completion) printf "%s\n" $actions ;;
+#   --completion-code)
+#     cmd=$(basename "$full_cmd")
+#     echo "compctl -K _${cmd} ${cmd}"
+#     echo "_${cmd}() {"
+#     echo '  local words; read -cA words; shift -p words'
+#     echo '  reply=($($words --completion))'
+#     echo '}'
+#     ;;
+#   *) die "Usage: $full_cmd [ $actions ]" ;;
+# esac
