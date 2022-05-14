@@ -236,7 +236,24 @@ case "$verb" in
         esac
         ;;
 
-      search) die "TK" ;;
+      search)
+        item_types=(album artist playlist track show episode)
+
+        case "$3" in
+          --completion) printf "%s\n" $item_types ;;
+          "") die "" ;;
+          *)
+            case "$4" in
+              --completion) die "" ;;
+              "") die "" ;;
+              *)
+                q=$(echo "$4" | jq --raw-input -r '@uri')
+                get_search "v1/search?q=${q}&type=$3"
+                ;;
+            esac
+            ;;
+        esac
+        ;;
 
       "") die "" ;;
     esac
@@ -302,22 +319,3 @@ case "$verb" in
 
   *) die $verb ;;
 esac
-
-#   search)
-#     item_types=(album artist playlist track show episode)
-
-#     case "$1" in
-#       --completion) printf "%s\n" $item_types ;;
-#       "") die "Please specify an item type ($item_types)" ;;
-#       *)
-#         [[ -z "$3" ]] || exit 0
-#         type=$1 # TK make sure it's in $item_types!
-#         case "$2" in
-#           --completion) exit 0 ;;
-#           "") die "Please specify a search query" ;;
-#           *)
-#             q=$(echo "$2" | jq --raw-input -r '@uri')
-#             get_search "v1/search?q=${q}&type=${type}"
-#             ;;
-#         esac
-#         ;;
