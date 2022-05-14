@@ -250,7 +250,25 @@ case "$verb" in
       "") die "" ;;
       me)
         case "$3" in
-          player) die "TK" ;;
+          --completion) printf "%s\n" player ;;
+          "") die "" ;;
+          player)
+            case "$4" in
+              --completion) printf "%s\n" pause play volume ;;
+              "") die "" ;;
+              pause) spotify_api_call PUT v1/me/player/pause ;;
+              play) spotify_api_call PUT v1/me/player/play ;;
+              volume)
+                case "$5" in
+                  --completion) printf "%s\n" 0 25 50 75 100 ;; # TK up down min max
+                  "") die "" ;;
+                  *)
+                    spotify_api_call PUT "v1/me/player/volume?volume_percent=$5"
+                    ;;
+                esac
+                ;;
+            esac
+            ;;
         esac
         ;;
     esac
