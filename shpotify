@@ -125,7 +125,13 @@ actions=(albums artists browse markets me playlists recommendations search)
 
 action=$1; shift
 case "$action" in
-  albums) spotify_api_call GET "v1/albums/$1" ;; # TK check if $1 is legal
+  albums)
+    case "$2" in
+      --completion) printf "%s\n" tracks ;;
+      "") spotify_api_call GET "v1/albums/$1" ;; # TK check if $1 is legal
+      tracks) get_paginated "v1/albums/$1/tracks" ;;
+    esac
+    ;;
 
   artists)
     case "$2" in
