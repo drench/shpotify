@@ -135,9 +135,10 @@ case "$action" in
 
   artists)
     case "$2" in
-      --completion) printf "%s\n" albums ;;
+      --completion) printf "%s\n" albums top-tracks ;;
       "") spotify_api_call GET "v1/artists/$1" ;; # TK check if $1 is legal
       albums) get_paginated "v1/artists/$1/albums" ;;
+      top-tracks) spotify_api_call GET "v1/artists/$1/top-tracks?market=US" ;;
     esac
     ;;
 
