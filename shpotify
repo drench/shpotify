@@ -242,7 +242,33 @@ case "$verb" in
     esac
     ;;
 
-  post) die $verb ;;
+  post)
+    case "$noun" in
+      --completion) printf "%s\n" me ;;
+      me)
+        case "$3" in
+          --completion) printf "%s\n" player ;;
+          player)
+            case "$4" in
+              --completion) printf "%s\n" next previous queue ;;
+              next) spotify_api_call POST v1/me/player/next ;;
+              previous) spotify_api_call POST v1/me/player/previous ;;
+              queue)
+                case "$5" in
+                  spotify:track:*)
+                    spotify_api_call POST "v1/me/player/queue?uri=$5"
+                    ;;
+                  *) die "" ;;
+                esac
+                ;;
+            esac
+            ;;
+          *) die "" ;;
+        esac
+        ;;
+      *) die "" ;;
+    esac
+    ;;
 
   put)
     case "$noun" in
