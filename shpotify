@@ -55,6 +55,19 @@ refresh_token_if_outdated() {
   export "SPOTIFY_ACCESS_TOKEN=$new_token"
 }
 
+get_cached_file() {
+  file="$SHPOTIFY_CACHE_DIR/$1"
+  test -r "$file" || return
+  now=$(date +%s)
+  cached_at=$(zstat +mtime "$file")
+  delta=$(($now - $cached_at))
+  if [ "$delta" -gt 3600 ]; then
+    rm "$file"
+  else
+    cat "$file"
+  fi
+}
+
 get_playlists() {
   [[ "$1" =~ "^[[:alnum:]]+$" ]] || die "Invalid playlist ID '$1'"
   spotify_api_call GET "v1/playlists/$1"
@@ -78,32 +91,33 @@ get_paginated() {
 }
 
 get_browse_categories() {
+  categories=""
+
   if [ "$1" = "--cached" ]; then
-    cache=$(cat "$SHPOTIFY_CACHE_DIR/browse-categories.json" 2> /dev/null)
-    if [ -n "$cache" ]; then
-      echo $cache | jq -r '.[] | .id'
-      return
-    fi
+    categories=$(get_cached_file "browse-categories.json")
   fi
 
-  categories=$(get_paginated v1/browse/categories .categories)
-  echo "$categories" > "$SHPOTIFY_CACHE_DIR/browse-categories.json"
+  if [ -z "$categories" ]; then
+    categories=$(get_paginated v1/browse/categories .categories)
+    echo "$categories" > "$SHPOTIFY_CACHE_DIR/browse-categories.json"
+  fi
+
   echo "$categories" | jq -r '.[] | .id'
 }
 
 get_me_playlists() {
+  all_items=""
+
   if [ "$1" = "--cached" ]; then
-    cache=$(cat "$SHPOTIFY_CACHE_DIR/me-playlists.json" 2> /dev/null)
-    if [ -n "$cache" ]; then
-      echo $cache
-      return
-    fi
+    all_items=$(get_cached_file "me-playlists.json")
   fi
 
-  all_items=$(get_paginated v1/me/playlists)
-  echo $all_items > "$SHPOTIFY_CACHE_DIR/me-playlists.json"
+  if [ -z "$all_items" ]; then
+    all_items=$(get_paginated v1/me/playlists)
+    echo "$all_items" > "$SHPOTIFY_CACHE_DIR/me-playlists.json"
+  fi
 
-  echo $all_items
+  echo "$all_items"
 }
 
 get_search() {
