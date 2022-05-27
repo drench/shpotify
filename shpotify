@@ -1,5 +1,7 @@
 #!/usr/bin/env zsh
 
+set -e
+
 zmodload zsh/stat
 
 full_cmd=$0
@@ -27,9 +29,13 @@ spotify_api_call() {
   url=$2
   [[ "$url" = https://api.spotify.com/* ]] || url="https://api.spotify.com/$2"
 
-  curl --silent \
-    --request "$method" \
-    -H "Authorization: Bearer ${SPOTIFY_ACCESS_TOKEN}" "$url" | jq .
+  raw_response=$(
+    curl --silent \
+      --request "$method" \
+      -H "Authorization: Bearer ${SPOTIFY_ACCESS_TOKEN}" "$url"
+  )
+
+  echo "$raw_response" | sed -E 's#\\([^"\\])#\\\\\1#g' | jq .
 }
 
 fetch_refresh_token() {
@@ -52,7 +58,8 @@ refresh_token_if_outdated() {
   [[ "$new_token" = "null" ]] && die "No token returned"
   [[ -z "$new_token" ]] && die "Token is empty ???"
   echo "$new_token" > "$env_dir/SPOTIFY_ACCESS_TOKEN"
-  export "SPOTIFY_ACCESS_TOKEN=$new_token"
+  SPOTIFY_ACCESS_TOKEN="$new_token"
+  export SPOTIFY_ACCESS_TOKEN
 }
 
 get_cached_file() {
