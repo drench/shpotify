@@ -35,7 +35,7 @@ spotify_api_call() {
       -H "Authorization: Bearer ${SPOTIFY_ACCESS_TOKEN}" "$url"
   )
 
-  echo "$raw_response" | sed -E 's#\\([^"\\])#\\\\\1#g' | jq .
+  printf "%s\n" "$raw_response" | jq .
 }
 
 fetch_refresh_token() {
@@ -57,7 +57,7 @@ refresh_token_if_outdated() {
   new_token=$(fetch_refresh_token)
   [[ "$new_token" = "null" ]] && die "No token returned"
   [[ -z "$new_token" ]] && die "Token is empty ???"
-  echo "$new_token" > "$env_dir/SPOTIFY_ACCESS_TOKEN"
+  printf "%s\n" "$new_token" > "$env_dir/SPOTIFY_ACCESS_TOKEN"
   SPOTIFY_ACCESS_TOKEN="$new_token"
   export SPOTIFY_ACCESS_TOKEN
 }
@@ -86,7 +86,7 @@ get_playlists() {
   while ([ -n "$next_url" ] && [ "$next_url" != "null" ]); do
     sleep 1
     resp=$(spotify_api_call GET "$next_url")
-    items="$(jq '. += (input | .items)' <(echo "$items") <(echo "$resp"))"
+    items="$(jq '. += (input | .items)' <(printf "%s\n" "$items") <(printf "%s\n" "$resp"))"
     next_url="$(printf "%s\n" "$resp" | jq -r ".next")"
     warn "next_url is '${next_url}'"
   done
@@ -102,13 +102,13 @@ get_paginated() {
 
   while ([ -n "$next_url" ] && [ "$next_url" != "null" ]); do
     resp=$(spotify_api_call GET "$next_url")
-    new_items=$(echo "$resp" | jq "${selector_prefix}.items")
+    new_items=$(printf "%s\n" "$resp" | jq "${selector_prefix}.items")
     items=($items $new_items)
-    next_url="$(echo "$resp" | jq -r "${selector_prefix}.next")"
+    next_url="$(printf "%s\n" "$resp" | jq -r "${selector_prefix}.next")"
     sleep 1
   done
 
-  echo $items | jq -s add
+  printf "%s\n" "$items" | jq -s add
 }
 
 get_browse_categories() {
@@ -120,10 +120,10 @@ get_browse_categories() {
 
   if [ -z "$categories" ]; then
     categories=$(get_paginated v1/browse/categories .categories)
-    echo "$categories" > "$SHPOTIFY_CACHE_DIR/browse-categories.json"
+    printf "%s\n" "$categories" > "$SHPOTIFY_CACHE_DIR/browse-categories.json"
   fi
 
-  echo "$categories" | jq -r '.[] | .id'
+  printf "%s\n" "$categories" | jq -r '.[] | .id'
 }
 
 get_me_playlists() {
@@ -135,10 +135,10 @@ get_me_playlists() {
 
   if [ -z "$all_items" ]; then
     all_items=$(get_paginated v1/me/playlists)
-    echo "$all_items" > "$SHPOTIFY_CACHE_DIR/me-playlists.json"
+    printf "%s\n" "$all_items" > "$SHPOTIFY_CACHE_DIR/me-playlists.json"
   fi
 
-  echo "$all_items"
+  printf "%s\n" "$all_items"
 }
 
 get_search() {
@@ -147,13 +147,13 @@ get_search() {
 
   while ([ -n "$next_url" ] && [ "$next_url" != "null" ]); do
     resp=$(spotify_api_call GET "$next_url")
-    new_items=$(echo "$resp" | jq 'to_entries[] | .value.items')
+    new_items=$(printf "%s\n" "$resp" | jq 'to_entries[] | .value.items')
     items=($items $new_items)
-    next_url="$(echo "$resp" | jq -r .next)"
+    next_url="$(printf "%s\n" "$resp" | jq -r .next)"
     sleep 1
   done
 
-  echo $items | jq -s add
+  printf "%s\n" $items | jq -s add
 }
 
 verbs=(delete get post put)
