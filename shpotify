@@ -79,19 +79,19 @@ get_playlists() {
   [[ "$1" =~ "^[[:alnum:]]+$" ]] || die "Invalid playlist ID '$1'"
 
   playlist=$(spotify_api_call GET "v1/playlists/$1")
-  next_url=$(echo "$playlist" | jq -r ".tracks.next")
+  next_url=$(printf "%s\n" "$playlist" | jq -r ".tracks.next")
 
-  items="$(echo "$playlist" | jq '.tracks.items')"
+  items="$(printf "%s\n" "$playlist" | jq '.tracks.items')"
 
   while ([ -n "$next_url" ] && [ "$next_url" != "null" ]); do
     sleep 1
     resp=$(spotify_api_call GET "$next_url")
     items="$(jq '. += (input | .items)' <(echo "$items") <(echo "$resp"))"
-    next_url="$(echo "$resp" | jq -r ".next")"
+    next_url="$(printf "%s\n" "$resp" | jq -r ".next")"
     warn "next_url is '${next_url}'"
   done
 
-  jq '.tracks.items |= input' <(echo "$playlist") <(echo "$items")
+  jq '.tracks.items |= input' <(printf "%s\n" "$playlist") <(printf "%s\n" "$items")
 }
 
 get_paginated() {
