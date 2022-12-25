@@ -157,6 +157,11 @@ case "$verb" in
     echo '  reply=($($words --completion))'
     echo '}'
     ;;
+  --raw)
+    verb=$2
+    url=$3
+    spotify_api_call "${verb:u}" "$url"
+    ;;
   delete) die $verb ;;
   get)
     case "$noun" in
