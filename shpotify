@@ -315,6 +315,10 @@ case "$verb" in
                   spotify:track:*)
                     spotify_api_call POST "v1/me/player/queue?uri=$5"
                     ;;
+                  https://open.spotify.com/track/*)
+                    track=${${5##*/}%\?*}
+                    spotify_api_call POST "v1/me/player/queue?uri=spotify:track:$track"
+                    ;;
                   *) die "" ;;
                 esac
                 ;;
