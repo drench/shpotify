@@ -241,7 +241,9 @@ case "$verb" in
           playlists) test -z "$4" && get_me_playlists ;;
           player)
             case "$4" in
-              --completion) printf "%s\n" currently-playing devices recently-played ;;
+              --completion)
+                printf "%s\n" currently-playing devices queue recently-played
+                ;;
               "") spotify_api_call GET v1/me/player ;;
               currently-playing) spotify_api_call GET v1/me/player/currently-playing ;;
               devices)
@@ -251,6 +253,7 @@ case "$verb" in
                   *) die "" ;;
                 esac
                 ;;
+              queue) spotify_api_call GET v1/me/player/queue ;;
               recently-played) get_paginated v1/me/player/recently-played ;;
             esac
             ;;
