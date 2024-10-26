@@ -181,7 +181,7 @@ case "$verb" in
     case "$noun" in
       --completion)
         printf "%s\n" \
-          albums artists browse markets me playlists recommendations search
+          albums artists browse markets me playlists recommendations search users
         ;;
 
       albums)
@@ -298,6 +298,14 @@ case "$verb" in
                 ;;
             esac
             ;;
+        esac
+        ;;
+
+      users)
+        case "$3" in
+          --completion) printf "" ;;
+          "") die "" ;;
+          *) spotify_api_call GET v1/users/$3 ;;
         esac
         ;;
 
