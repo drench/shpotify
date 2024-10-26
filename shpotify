@@ -244,7 +244,13 @@ case "$verb" in
               --completion) printf "%s\n" currently-playing devices recently-played ;;
               "") spotify_api_call GET v1/me/player ;;
               currently-playing) spotify_api_call GET v1/me/player/currently-playing ;;
-              devices) spotify_api_call GET v1/me/player/devices ;;
+              devices)
+                case "$5" in
+                  --completion) echo "" ;;
+                  "") spotify_api_call GET v1/me/player/devices ;;
+                  *) die "" ;;
+                esac
+                ;;
               recently-played) get_paginated v1/me/player/recently-played ;;
             esac
             ;;
