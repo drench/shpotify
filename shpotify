@@ -111,21 +111,6 @@ get_paginated() {
   printf "%s\n" "$items" | jq -s add
 }
 
-get_browse_categories() {
-  categories=""
-
-  if [ "$1" = "--cached" ]; then
-    categories=$(get_cached_file "browse-categories.json")
-  fi
-
-  if [ -z "$categories" ]; then
-    categories=$(get_paginated v1/browse/categories .categories)
-    printf "%s\n" "$categories" > "$SHPOTIFY_CACHE_DIR/browse-categories.json"
-  fi
-
-  printf "%s\n" "$categories" | jq -r '.[] | .id'
-}
-
 get_me_playlists() {
   all_items=""
 
@@ -181,7 +166,7 @@ case "$verb" in
     case "$noun" in
       --completion)
         printf "%s\n" \
-          albums artists browse me playlists recommendations search users
+          albums artists me playlists recommendations search users
         ;;
 
       albums)
@@ -201,20 +186,6 @@ case "$verb" in
           albums) get_paginated "v1/artists/$artist/albums" ;;
           related-artists)
             spotify_api_call GET "v1/artists/$artist/related-artists"
-            ;;
-        esac
-        ;;
-
-      browse)
-        case "$3" in
-          --completion) printf "%s\n" categories ;;
-          "") die "" ;;
-          categories)
-            case "$4" in
-              --completion) get_browse_categories --cached ;;
-              "") get_paginated v1/browse/categories .categories ;;
-              *) spotify_api_call GET "v1/browse/categories/$4" ;;
-            esac
             ;;
         esac
         ;;
