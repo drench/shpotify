@@ -196,14 +196,11 @@ case "$verb" in
       artists)
         artist=$3
         case "$4" in
-          --completion) printf "%s\n" albums related-artists top-tracks ;;
+          --completion) printf "%s\n" albums related-artists ;;
           "") spotify_api_call GET "v1/artists/$artist" ;;
           albums) get_paginated "v1/artists/$artist/albums" ;;
           related-artists)
             spotify_api_call GET "v1/artists/$artist/related-artists"
-            ;;
-          top-tracks)
-            spotify_api_call GET "v1/artists/$artist/top-tracks?market=US"
             ;;
         esac
         ;;
